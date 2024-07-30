@@ -18,46 +18,68 @@ class SamplePlugin: Plugin<Project> {
 
     override fun apply(project: Project): Unit = project.run  {
         val extension = project.extensions.create<SampleExtension>("sample")
-//        logger.quiet("extension: \n directories: \n   proto: {}\n   gsl: {}",
 
-        with (extension as ExtensionAware) {
-            // https://docs.gradle.org/current/userguide/collections.html
-            val dim1Container: NamedDomainObjectContainer<Dim1> =
-                project.objects.domainObjectContainer(Dim1::class)
-            project.extensions.add("dim1", dim1Container)
-            logger.quiet("dim1 container size: {}", dim1Container.size)
+        val srcDir = extension.srcDir
+        logger.quiet("apply context: src dir: {}", srcDir)
 
-            val dim2Container: NamedDomainObjectContainer<Dim2> =
-                project.objects.domainObjectContainer(Dim2::class)
-            project.extensions.add("dim2", dim2Container)
-            logger.quiet("dim2 container size: {}", dim2Container.size)
+        extension as ExtensionAware
+        // https://docs.gradle.org/current/userguide/collections.html
+        val dim1Container: NamedDomainObjectContainer<Dim1> =
+            project.objects.domainObjectContainer(Dim1::class)
+        project.extensions.add("dim1", dim1Container)
+        logger.quiet("apply context: container size dim1: {}", dim1Container.size)
 
-            // Register a task
-            tasks {
-                val taskScope = this
-                logger.quiet("tasks context: container size dim1: {},  dim2: {}", dim1Container.size, dim2Container.size)
-                register("greeting") {
-                    logger.quiet("greeting context: container size dim1: {},  dim2: {}", dim1Container.size, dim2Container.size)
-                    dim1Container.all { dim1 ->
-                        dim2Container.all { dim2 ->
-                            logger.quiet("greeting context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
-                            true
-                        }
-                    }
-                    this.doLast {
-                        println("Hello from plugin 'edu.vu.sample-plugin'")
+        val dim2Container: NamedDomainObjectContainer<Dim2> =
+            project.objects.domainObjectContainer(Dim2::class)
+        project.extensions.add("dim2", dim2Container)
+        logger.quiet("apply context: container size dim2: {}", dim2Container.size)
+
+        // Register a task
+        tasks {
+            logger.quiet("tasks context: src dir: {}", srcDir)
+
+            logger.quiet("tasks context: container size dim1: {},  dim2: {}", dim1Container.size, dim2Container.size)
+            register("greeting") {
+                logger.quiet("greeting context: src dir: {}", srcDir)
+                logger.quiet(
+                    "greeting context: container size dim1: {},  dim2: {}",
+                    dim1Container.size,
+                    dim2Container.size
+                )
+                dim1Container.forEach { dim1 ->
+                    dim2Container.forEach { dim2 ->
+                        logger.quiet("greeting context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
                     }
                 }
-                dim1Container.all { dim1 ->
-                    dim2Container.all { dim2 ->
-                        logger.quiet("tasks context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
-                        taskScope.register("task${dim1.name}${dim2.name}") {
-                            logger.quiet("tasks context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
-                            this.doLast {
-                                println("Hello from plugin 'edu.vu.sample-plugin'")
-                            }
-                        }
-                        true
+                this.doLast {
+                    logger.quiet("Greetings from plugin 'edu.vu.sample-plugin' {}", this.name)
+                }
+            }
+        }
+        dim1Container.all {
+            val dim1 = this
+            dim2Container.all {
+                val dim2 = this
+                logger.quiet("apply All context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
+                tasks.register("taskAll${dim1.name}${dim2.name}") {
+                    logger.quiet("task: {}", this.name)
+                    this.doLast {
+                        logger.quiet("Greetings from plugin 'edu.vu.sample-plugin' {}",
+                            this.name, dim1.x.orNull, dim1.y.orNull, dim2.z.orNull)
+                    }
+                }
+            }
+        }
+        dim1Container.configureEach {
+            val dim1 = this
+            dim2Container.configureEach {
+                val dim2 = this
+                logger.quiet("apply configureEach context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
+                tasks.register("taskConfig${dim1.name}${dim2.name}") {
+                    logger.quiet("task: {}", this.name)
+                    this.doLast {
+                        logger.quiet("Greetings from plugin 'edu.vu.sample-plugin' {} x:{} y:{} z:{}",
+                            this.name, dim1.x.orNull, dim1.y.orNull, dim2.z.orNull)
                     }
                 }
             }
