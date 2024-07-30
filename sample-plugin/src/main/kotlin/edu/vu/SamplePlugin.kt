@@ -3,6 +3,7 @@ package edu.vu
 
 import Dim1
 import Dim2
+import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.Plugin
@@ -46,8 +47,8 @@ class SamplePlugin: Plugin<Project> {
                     dim1Container.size,
                     dim2Container.size
                 )
-                dim1Container.forEach { dim1 ->
-                    dim2Container.forEach { dim2 ->
+                dim1Container.configureEach { val dim1 = this
+                    dim2Container.configureEach { val dim2 = this
                         logger.quiet("greeting context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
                     }
                 }
@@ -56,29 +57,13 @@ class SamplePlugin: Plugin<Project> {
                 }
             }
         }
-        dim1Container.all {
-            val dim1 = this
-            dim2Container.all {
-                val dim2 = this
+        dim1Container.configureEach { val dim1 = this
+            dim2Container.configureEach { val dim2 = this
                 logger.quiet("apply All context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
                 tasks.register("taskAll${dim1.name}${dim2.name}") {
                     logger.quiet("task: {}", this.name)
                     this.doLast {
                         logger.quiet("Greetings from plugin 'edu.vu.sample-plugin' {}",
-                            this.name, dim1.x.orNull, dim1.y.orNull, dim2.z.orNull)
-                    }
-                }
-            }
-        }
-        dim1Container.configureEach {
-            val dim1 = this
-            dim2Container.configureEach {
-                val dim2 = this
-                logger.quiet("apply configureEach context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
-                tasks.register("taskConfig${dim1.name}${dim2.name}") {
-                    logger.quiet("task: {}", this.name)
-                    this.doLast {
-                        logger.quiet("Greetings from plugin 'edu.vu.sample-plugin' {} x:{} y:{} z:{}",
                             this.name, dim1.x.orNull, dim1.y.orNull, dim2.z.orNull)
                     }
                 }
