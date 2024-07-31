@@ -36,35 +36,14 @@ class SamplePlugin: Plugin<Project> {
         logger.quiet("apply context: container size dim2: {}", dim2Container.size)
 
         // Register a task
-        tasks {
-            logger.quiet("tasks context: src dir: {}", srcDir)
-
-            logger.quiet("tasks context: container size dim1: {},  dim2: {}", dim1Container.size, dim2Container.size)
-            register("greeting") {
-                logger.quiet("greeting context: src dir: {}", srcDir)
-                logger.quiet(
-                    "greeting context: container size dim1: {},  dim2: {}",
-                    dim1Container.size,
-                    dim2Container.size
-                )
-                dim1Container.configureEach { val dim1 = this
-                    dim2Container.configureEach { val dim2 = this
-                        logger.quiet("greeting context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
-                    }
-                }
-                this.doLast {
-                    logger.quiet("Greetings from plugin 'edu.vu.sample-plugin' {}", this.name)
-                }
-            }
-        }
-        dim1Container.configureEach { val dim1 = this
-            dim2Container.configureEach { val dim2 = this
-                logger.quiet("apply All context: container name dim1: {}, dim2: {}", dim1.name, dim2.name)
-                tasks.register("taskAll${dim1.name}${dim2.name}") {
+        dim1Container.all dim1@{
+            dim2Container.all dim2@{
+                logger.quiet("apply All context: container name dim1: {}, dim2: {}", this@dim1.name, this@dim2.name)
+                tasks.register("taskAll${this@dim1.name}${this@dim2.name}") {
                     logger.quiet("task: {}", this.name)
                     this.doLast {
                         logger.quiet("Greetings from plugin 'edu.vu.sample-plugin' {}",
-                            this.name, dim1.x.orNull, dim1.y.orNull, dim2.z.orNull)
+                            this.name, this@dim1.x.orNull, this@dim1.y.orNull, this@dim2.z.orNull)
                     }
                 }
             }
